@@ -45,7 +45,7 @@ def main():
     
     st.title("Image Caption App.")
 
-    selected = st.text_input("Search for an Object here....",)
+    
     file = st.file_uploader("Upload video",type=(['mp4']))
     if file is not None: # run only when user uploads video
         vid = file.name
