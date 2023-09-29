@@ -8,7 +8,7 @@ from PIL import Image
 import PIL
 
 #Loading the Inception model
-model= load_model('frames.h5',compile=(False))
+model= load_model('model.h5',compile=(False))
 
 #Functions
 def splitting(name):
