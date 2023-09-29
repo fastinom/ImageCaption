@@ -79,7 +79,7 @@ def main():
                 return 0
         st.warning("Item not  Found")
         
-    if st.button("Detect"):
+    if st.button("Describe the picture"):
         output1 = splitting(vid)
         output2 = preprocessing()
         output = predict(output2)
