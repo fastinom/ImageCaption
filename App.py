@@ -43,7 +43,7 @@ def predict(x):
 
 def main():
     
-    st.title("Object Detection Computer Vision.")
+    st.title("Image Caption App.")
 
     selected = st.text_input("Search for an Object here....",)
     file = st.file_uploader("Upload video",type=(['mp4']))
