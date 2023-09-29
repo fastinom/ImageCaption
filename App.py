@@ -51,7 +51,9 @@ def main():
         vid = file.name
         with open(vid, mode='wb') as f:
             f.write(file.read()) # save video to disk
-
+# Check if video file is uploaded
+if video_file is not None:
+    st.video(video_file)
         st.markdown(f"""
         ### Files
         - {vid}
