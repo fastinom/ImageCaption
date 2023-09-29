@@ -61,7 +61,18 @@ def main():
         vidcap = cv2.VideoCapture(vid) # load video from disk
         cur_frame = 0
         success = True
-    
+    # Check if video file is uploaded
+if video_file is not None:
+    st.video(video_file)
+
+    # Extract frames when the user clicks the button
+    if st.button("Extract Frames"):
+        frames = extract_frames(video_file)
+
+        # Display frames
+        st.write(f"Number of frames extracted: {len(frames)}")
+        for i, frame in enumerate(frames):
+            st.image(frame, caption=f"Frame {i}", use_column_width=True)
     def generatesearchitems():
         for i in range(20):
             filename = (r"img/frame%d.jpg" % i)
