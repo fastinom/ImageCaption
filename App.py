@@ -111,7 +111,7 @@ z-index:1;
 }
 </style>
 <div class="footer">
-<p>Developed by TAPIWA CHAREKWA</p>
+<p>Fassy</p>
 </div>
 """
 st.markdown(footer,unsafe_allow_html=True)
