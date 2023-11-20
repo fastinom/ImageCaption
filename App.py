@@ -4,7 +4,7 @@ from os.path import join, dirname, realpath
 from glob import glob
 import numpy as np
 import os
-import cv2,imutils
+
 import tensorflow as tf
 
 from transformers import ViTImageProcessor
