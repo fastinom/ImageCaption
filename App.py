@@ -1,120 +1,144 @@
+import streamlit as st 
 from PIL import Image
-import streamlit as st
-import cv2
-import tensorflow as tf 
+from os.path import join, dirname, realpath
+from glob import glob
 import numpy as np
-from keras.models import load_model
-from PIL import Image
-import PIL
+import os
+import cv2,imutils
+import tensorflow as tf
 
-#Loading the Inception model
-model= load_model('model.h5',compile=(False))
+from transformers import ViTImageProcessor
 
-#Functions
-def splitting(name):
-    vidcap = cv2.VideoCapture(name)
-    success,frame = vidcap.read()
-    count = 0
-    frame_skip =1
-    while success:
-        success, frame = vidcap.read() # get next frame from video
-        cv2.imwrite(r"img/frame%d.jpg" % count, frame) 
-        if count % frame_skip == 0: # only analyze every n=300 frames
-            #print('frame: {}'.format(count)) 
-            pil_img = Image.fromarray(frame) # convert opencv frame (with type()==numpy) into PIL Image
-            #st.image(pil_img)
-        if count > 20 :
-            break
-        count += 1
-    preprocessing()
+import pickle
 
-def preprocessing():
-    x = tf.io.read_file('img/frame2.jpg')
-    x = tf.io.decode_image(x,channels=3) 
-    x = tf.image.resize(x,[299,299])
-    x = tf.expand_dims(x, axis=0)
-    x = tf.keras.applications.inception_v3.preprocess_input(x)
-    return x
+st.write('R204452G Tungamiraishe Mukwena')
+
+# TODO : Load the tokenizer.pickle in this directory object file
+with open('tokenizer.pickle','rb') as tokenizer_file:
+    TOKENIZER = pickle.load(tokenizer_file)
+
+# The model to generate the caption
+# TODO : Load the caption_model.h5 file in this directory
+CAPTIONMODEL =  tf.keras.models.load_model('caption_model.h5')
+# Feature extractor
+# TODO : Load the feature_extractor.h5 in this directory
+# IMAGEFEATUREEXTRACTOR = tf.keras.models.load_model('feature_extractor.h5')
+IMAGEFEATUREEXTRACTOR = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+
+# Frames path
+FRAMES = join(dirname(realpath(__file__)), "frames")
+ 
+def load_image(image_file):
+	img = Image.open(image_file)
+	return img
+
+#  upload video
+video = st.file_uploader(label="upload video", type="mp4", key="video_upload_file")
+
+# Continue only if video is uploaded successfully
+if(video is not None):
+    if os.path.exists(FRAMES):
+        frame_paths = glob(f"frames/*.jpeg")
+        for path in frame_paths:
+            os.remove(path)
+        os.rmdir(FRAMES)
+    # Notify user
+    st.text("Video has been uploaded")
+    # Gather video meta data
+    file_details = {
+        "filename":video.name, 
+        "filetype":video.type,
+        "filesize":video.size
+    }
+    # Show on ui
+    st.write(file_details)
+    # save video
+    with open(video.name, "wb") as f:
+        f.write(video.getbuffer())
     
-def predict(x):
-    P = tf.keras.applications.inception_v3.decode_predictions(model.predict(x), top=1)
-    return P
+    st.success("Video saved")
 
+    video_file = open(file_details['filename'], 'rb')
+    video_bytes = video_file.read()
+    st.video(video_bytes)
 
-def main():
-    
-    st.title("Image Caption App.")
+    def create_frames():
 
-    
-    file = st.file_uploader("Upload video",type=(['mp4']))
-    if file is not None: # run only when user uploads video
-        vid = file.name
-        with open(vid, mode='wb') as f:
-            f.write(file.read()) # save video to disk
+        # Create frames directory
+        os.makedirs(FRAMES)
 
-        st.markdown(f"""
-        ### Files
-        - {vid}
-        """,
-        unsafe_allow_html=True) # display file name
+        images_array = []
 
-        vidcap = cv2.VideoCapture(vid) # load video from disk
-        cur_frame = 0
-        success = True
-  
-    def generatesearchitems():
-        for i in range(20):
-            filename = (r"img/frame%d.jpg" % i)
-            x = tf.io.read_file(filename)
-            x = tf.io.decode_image(x,channels=3) 
-            x = tf.image.resize(x,[299,299])
-            x = tf.expand_dims(x, axis=0)
-            x = tf.keras.applications.inception_v3.preprocess_input(x)
-            P = tf.keras.applications.inception_v3.decode_predictions(model.predict(x), top=1)
-            if (P[0][0][1]) == selected :
-                st.success("Item Found")
-                pic =  Image.open(filename)
-                st.image(pic)
-                st.text(P)
-                return 0
-        st.warning("Item not  Found")
+        cap = cv2.VideoCapture(video.name)
+        index = 0
+
+        while True:
+            ret, frame = cap.read()
+            if ret == False:
+                cap.release()
+                break
+            if frame is None:
+                break
+            else:
+                if index == 0:
+                    images_array.append(frame)
+                    cv2.imwrite(f"frames/{index}.jpeg", frame)
+
+                else:
+                    if index % 10 == 0:
+                        images_array.append(frame)
+                    cv2.imwrite(f"frames/{index}.jpeg", frame)
+
+            index += 1
+        return np.array(images_array)
+
+    images_array = create_frames()
+
+    def idx_to_word(integer,tokenizer):
+        for word, index in tokenizer.word_index.items():
+            if index==integer:
+                return word
+        return None
+
+    def predict_caption(image_path, max_length=34):
+        model = tf.keras.applications.DenseNet201()
+        fe = tf.keras.models.Model(inputs=model.input, outputs=model.layers[-2].output)
+
+        img_size = 224
+        features = {}
+
+        img = tf.keras.preprocessing.image.load_img(image_path,target_size=(img_size,img_size))
+        img = tf.keras.preprocessing.image.img_to_array(img)
+        img = img/255.
+        img = np.expand_dims(img,axis=0)
+        feature = fe.predict(img, verbose=0)
+        features[image_path] = feature
+
         
-    if st.button("Describe the picture"):
-        output1 = splitting(vid)
-        output2 = preprocessing()
-        output = predict(output2)
-        #st.success('The Output is {}'.format(output))
-        st.success("Successfuly detected all the objects!")
-        items =  generatesearchitems()
-footer="""<style>
-a:link , a:visited{
-color: blue;
-background-color: transparent;
-text-decoration: underline;
-}
+        feature = features[image_path]
+        in_text = "startseq"
 
-a:hover,  a:active {
-color: red;
-background-color: transparent;
-text-decoration: underline;
-}
+        for i in range(max_length):
+            sequence = TOKENIZER.texts_to_sequences([in_text])[0]
+            sequence = tf.keras.preprocessing.sequence.pad_sequences([sequence], max_length)
 
-.footer {
-position: fixed;
-left: 0;
-bottom: 0;
-width: 100%;
-background-color: white;
-color: black;
-text-align: center;
-z-index:1;
-}
-</style>
-<div class="footer">
-<p>Fassy</p>
-</div>
-"""
-st.markdown(footer,unsafe_allow_html=True)
+            y_pred = CAPTIONMODEL.predict([feature,sequence])
+            y_pred = np.argmax(y_pred)
+            
+            word = idx_to_word(y_pred, TOKENIZER)
+            
+            if word is None:
+                break
+                
+            in_text+= " " + word
+            
+            if word == 'endseq':
+                break
+                
+        return in_text
 
-if __name__=='__main__':
-    main()
+    if len(images_array) > 0:
+        frame_paths = glob(f"frames/*.jpeg")
+        for path in frame_paths:
+            caption = predict_caption(path)
+            st.image(load_image(path), caption=caption, width=250)
