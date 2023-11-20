@@ -19,7 +19,7 @@ with open('tokenizer.pickle','rb') as tokenizer_file:
 
 # The model to generate the caption
 # TODO : Load the caption_model.h5 file in this directory
-CAPTIONMODEL =  tf.keras.models.load_model('caption_model.h5')
+CAPTIONMODEL =  tf.keras.models.load_model('model.h5')
 # Feature extractor
 # TODO : Load the feature_extractor.h5 in this directory
 # IMAGEFEATUREEXTRACTOR = tf.keras.models.load_model('feature_extractor.h5')
