@@ -11,7 +11,7 @@ from transformers import ViTImageProcessor
 
 import pickle
 
-st.write('R204452G Tungamiraishe Mukwena')
+st.write('Fastino Mateteva')
 
 # TODO : Load the tokenizer.pickle in this directory object file
 with open('tokenizer.pickle','rb') as tokenizer_file:
