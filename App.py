@@ -11,7 +11,7 @@ from transformers import ViTImageProcessor
 
 import pickle
 
-st.write('Fastino Mateteva')
+st.write('Image Caption App')
 
 # TODO : Load the tokenizer.pickle in this directory object file
 with open('tokenizer.pickle','rb') as tokenizer_file:
